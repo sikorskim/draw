@@ -22,7 +22,7 @@ namespace draw_WindowForms
         bool startPaint = false;
         Graphics g;
         Point lastPoint = new Point(0, 0);
-        Stack<Rectangle> operations = new Stack<Rectangle>();
+        Stack<DrawPath> operations = new Stack<DrawPath>();
         Color selectedColor = Color.Black;
         Bitmap bmp;
         int penSize;
@@ -83,9 +83,6 @@ namespace draw_WindowForms
             Panel p = sender as Panel;
             selectedColor = p.BackColor;
             panel2.BackColor = selectedColor;
-
-            //lbl_color.Text = selected_color.ToString();
-            //lbl_color.ForeColor = selected_color;
         }
 
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
@@ -107,41 +104,20 @@ namespace draw_WindowForms
             if (startPaint)
             {
                 Pen p = new Pen(selectedColor, penSize);
-                Size size = new Size(penSize, penSize);
                 Point pointerLocation = new Point(e.X, e.Y);
 
                 g = Graphics.FromImage(bmp);
 
-                Rectangle rectangle = new Rectangle(pointerLocation, size);
-                g.DrawRectangle(p, rectangle);
-                operations.Push(rectangle);
+                Brush b = new SolidBrush(selectedColor);
+                g.DrawLine(p, pointerLocation, new Point(e.X+penSize, e.Y));
+                operations.Push(new DrawPath(p, pointerLocation, new Point(e.X + penSize, e.Y)));
 
-
-                //while (operations.Count > 0)
-                //{
-                //    Rectangle r = operations.Pop();
-                //    g.DrawRectangle(p, r);
-                //}
-
-
-                //if (lastPoint.X != 0 || lastPoint.Y != 0)
-                //{
-                //    p.Width = p.Width;
-                //    g.DrawLine(p, lastPoint, pointerLocation);
-                //}
-                //lastPoint = pointerLocation;
 
                 if (lastPoint.X != 0 || lastPoint.Y != 0)
                 {
-                    int fixX = lastPoint.X - e.X;
-                    int fixY = lastPoint.Y - e.Y;
-                    fixX = Math.Abs(fixX);
-                    fixY = Math.Abs(fixY);
-
-                    for (int i=0;i>0;i++)
-                    {
-
-                    }
+                    p.Width = p.Width;
+                    g.DrawLine(p, lastPoint, pointerLocation);
+                    operations.Push(new DrawPath(p, lastPoint, pointerLocation));
                 }
                 lastPoint = pointerLocation;
 
@@ -175,13 +151,20 @@ namespace draw_WindowForms
 
         private void undoToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            operations.Pop();
-            while (operations.Count > 0)
+            if (operations.Count > 0)
             {
-                Pen p = new Pen(Color.Black, 2);
-                Rectangle r = operations.Pop();
-                g.DrawRectangle(p, r);
+                bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+                g = Graphics.FromImage(bmp);
+                operations.Pop();
+
+                while (operations.Count > 0)
+                {
+                    DrawPath drawPath = operations.Pop();
+                    g.DrawLine(drawPath.pen, drawPath.startPoint, drawPath.endPoint);
+                }
+                pictureBox1.Image = bmp;
             }
+            
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
@@ -193,20 +176,20 @@ namespace draw_WindowForms
         {
             if (startPaint)
             {
-                Pen p = new Pen(Color.Black, 2);
-                Size size = new Size(1, 1);
-                Point pointerLocation = new Point(e.X, e.Y);
+                //Pen p = new Pen(Color.Black, 2);
+                //Size size = new Size(1, 1);
+                //Point pointerLocation = new Point(e.X, e.Y);
 
-                Rectangle rectangle = new Rectangle(pointerLocation, size);
-                operations.Push(rectangle);
-                g.DrawRectangle(p, rectangle);
+                //Rectangle rectangle = new Rectangle(pointerLocation, size);
+                //operations.Push(rectangle);
+                //g.DrawRectangle(p, rectangle);
 
                 //while (operations.Count > 0)
                 //{
                 //    Rectangle r = operations.Pop();
                 //    g.DrawRectangle(p, r);
                 //}
-                //if (lastPoint.X!=0||lastPoint.Y!=0)
+                //if (lastPoint.X != 0 || lastPoint.Y != 0)
                 //{
                 //    g.DrawLine(p, lastPoint, pointerLocation);
                 //}
@@ -222,7 +205,7 @@ namespace draw_WindowForms
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Filter = "Mapa bitowa|*.bmp";
+            saveFileDialog.Filter = "Bitmaps |*.bmp";
             DialogResult dialogResult = saveFileDialog.ShowDialog();
 
             if (dialogResult == DialogResult.OK)
@@ -238,22 +221,26 @@ namespace draw_WindowForms
             penSize = (int)numericUpDown1.Value;
         }
 
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string file = null;
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Multiselect = false;
+            openFileDialog.Filter = "Bitmaps |*.bmp"; 
+            DialogResult dialogResult = openFileDialog.ShowDialog();
 
-        //string file = null;
-        //OpenFileDialog openFileDialog = new OpenFileDialog();
-        //openFileDialog.Multiselect = false;
-        //    openFileDialog.Filter = extensionString;
-        //    DialogResult dialogResult = openFileDialog.ShowDialog();
+            if (dialogResult == DialogResult.OK)
+            {
+                file = openFileDialog.FileName;
+            }
+            else
+            {
+                MessageBox.Show("No file selecetd!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                file = null;
+            }
 
-        //    if (dialogResult == DialogResult.OK)
-        //    {
-        //        file = openFileDialog.FileName;
-        //    }
-        //    else
-        //    {
-        //        MessageBox.Show("Nie wybrano pliku!", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-        //        file = null;
-        //    }
-        //    return file;
+            bmp = (Bitmap)Image.FromFile(file);
+            pictureBox1.Image = bmp;
+        }
     }
 }

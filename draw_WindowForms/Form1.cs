@@ -25,6 +25,7 @@ namespace draw_WindowForms
         Stack<Rectangle> operations = new Stack<Rectangle>();
         Color selectedColor = Color.Black;
         Bitmap bmp;
+        int penSize;
 
         void startup()
         {
@@ -35,6 +36,7 @@ namespace draw_WindowForms
 
             toolStripButton1.Image = SystemIcons.Error.ToBitmap();
             bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+            numericUpDown1.Value = 3;
         }
 
         void createColorPicker()
@@ -80,7 +82,7 @@ namespace draw_WindowForms
         {
             Panel p = sender as Panel;
             selectedColor = p.BackColor;
-            p.BorderStyle = BorderStyle.FixedSingle;
+            panel2.BackColor = selectedColor;
 
             //lbl_color.Text = selected_color.ToString();
             //lbl_color.ForeColor = selected_color;
@@ -97,13 +99,15 @@ namespace draw_WindowForms
             lastPoint = new Point(0, 0);
         }
 
+
+
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
             showLocation(e.X, e.Y);
             if (startPaint)
             {
-                Pen p = new Pen(selectedColor, 2);
-                Size size = new Size(1, 1);
+                Pen p = new Pen(selectedColor, penSize);
+                Size size = new Size(penSize, penSize);
                 Point pointerLocation = new Point(e.X, e.Y);
 
                 g = Graphics.FromImage(bmp);
@@ -112,14 +116,32 @@ namespace draw_WindowForms
                 g.DrawRectangle(p, rectangle);
                 operations.Push(rectangle);
 
-                while (operations.Count > 0)
-                {
-                    Rectangle r = operations.Pop();
-                    g.DrawRectangle(p, r);
-                }
+
+                //while (operations.Count > 0)
+                //{
+                //    Rectangle r = operations.Pop();
+                //    g.DrawRectangle(p, r);
+                //}
+
+
+                //if (lastPoint.X != 0 || lastPoint.Y != 0)
+                //{
+                //    p.Width = p.Width;
+                //    g.DrawLine(p, lastPoint, pointerLocation);
+                //}
+                //lastPoint = pointerLocation;
+
                 if (lastPoint.X != 0 || lastPoint.Y != 0)
                 {
-                    g.DrawLine(p, lastPoint, pointerLocation);
+                    int fixX = lastPoint.X - e.X;
+                    int fixY = lastPoint.Y - e.Y;
+                    fixX = Math.Abs(fixX);
+                    fixY = Math.Abs(fixY);
+
+                    for (int i=0;i>0;i++)
+                    {
+
+                    }
                 }
                 lastPoint = pointerLocation;
 
@@ -209,6 +231,11 @@ namespace draw_WindowForms
                 pictureBox1.DrawToBitmap(bmp, rect);
                 bmp.Save(saveFileDialog.FileName);
             }
+        }
+
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+            penSize = (int)numericUpDown1.Value;
         }
 
 

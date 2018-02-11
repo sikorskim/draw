@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -15,6 +19,7 @@ namespace draw_WindowForms
         public Form1()
         {
             InitializeComponent();
+            ChangeCulture(Thread.CurrentThread.CurrentUICulture);
             g = pictureBox1.CreateGraphics();
             startup();
         }
@@ -26,6 +31,9 @@ namespace draw_WindowForms
         Color selectedColor = Color.Black;
         Bitmap bmp;
         int penSize;
+        int drawMode = 0;
+        Point startPoint;
+        Point endPoint;
 
         void startup()
         {
@@ -34,7 +42,6 @@ namespace draw_WindowForms
             toolStrip1.GripStyle = ToolStripGripStyle.Hidden;
             createColorPicker();
 
-            toolStripButton1.Image = SystemIcons.Error.ToBitmap();
             bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             numericUpDown1.Value = 3;
         }
@@ -88,12 +95,27 @@ namespace draw_WindowForms
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
             startPaint = true;
+            startPoint = new Point(e.X, e.Y);
         }
 
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
         {
             startPaint = false;
             lastPoint = new Point(0, 0);
+            endPoint= new Point(e.X, e.Y);
+
+            if (drawMode == 1)
+            {
+                drawLine();
+            }
+            else if (drawMode == 2)
+            {
+                drawRectangle();
+            }
+            else if (drawMode == 3)
+            {
+                drawElipse();
+            }
         }
 
 
@@ -101,6 +123,14 @@ namespace draw_WindowForms
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
             showLocation(e.X, e.Y);
+            if (drawMode == 0)
+            {
+                drawFreeLines(e);
+            }
+        }
+
+        void drawFreeLines(MouseEventArgs e)
+        {
             if (startPaint)
             {
                 Pen p = new Pen(selectedColor, penSize);
@@ -109,7 +139,7 @@ namespace draw_WindowForms
                 g = Graphics.FromImage(bmp);
 
                 Brush b = new SolidBrush(selectedColor);
-                g.DrawLine(p, pointerLocation, new Point(e.X+penSize, e.Y));
+                g.DrawLine(p, pointerLocation, new Point(e.X + penSize, e.Y));
                 operations.Push(new DrawPath(p, pointerLocation, new Point(e.X + penSize, e.Y)));
 
 
@@ -123,6 +153,86 @@ namespace draw_WindowForms
 
                 pictureBox1.Image = bmp;
             }
+        }
+
+        void drawLine()
+        {
+                Pen p = new Pen(selectedColor, penSize);
+                g = Graphics.FromImage(bmp);
+
+                Brush b = new SolidBrush(selectedColor);
+                g.DrawLine(p, startPoint,endPoint);
+
+                pictureBox1.Image = bmp;
+        }
+
+        void drawRectangle()
+        {
+            Pen p = new Pen(selectedColor, penSize);
+            g = Graphics.FromImage(bmp);
+
+            Brush b = new SolidBrush(selectedColor);
+            int locX = startPoint.X;
+            int locY = startPoint.Y;
+
+            int width = startPoint.X - endPoint.X;
+            int height = startPoint.Y - endPoint.Y;
+
+            if (width > 0)
+            {
+                locX -= width;
+            }
+            else
+            {
+                width = Math.Abs(width);
+            }
+
+            if (height > 0)
+            {
+                locY -= height;
+            }
+            else
+            {
+                height = Math.Abs(height);
+            }
+
+            g.DrawRectangle(p, locX, locY, width, height);
+
+            pictureBox1.Image = bmp;
+        }
+
+        void drawElipse()
+        {
+            Pen p = new Pen(selectedColor, penSize);
+            g = Graphics.FromImage(bmp);
+
+            Brush b = new SolidBrush(selectedColor);
+            int locX = startPoint.X;
+            int locY = startPoint.Y;
+
+            int width = startPoint.X - endPoint.X;
+            int height = startPoint.Y - endPoint.Y;
+
+            if (width > 0)
+            {
+                locX -= width;
+            }
+            else
+            {
+                width = Math.Abs(width);
+            }
+
+            if (height > 0)
+            {
+                locY -= height;
+            }
+            else
+            {
+                height = Math.Abs(height);
+            }
+            g.DrawEllipse(p, locX, locY, width, height);
+
+            pictureBox1.Image = bmp;
         }
 
         void showLocation(int x, int y)
@@ -146,7 +256,7 @@ namespace draw_WindowForms
 
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
-
+            drawMode = 0;
         }
 
         private void undoToolStripMenuItem_Click(object sender, EventArgs e)
@@ -164,7 +274,7 @@ namespace draw_WindowForms
                 }
                 pictureBox1.Image = bmp;
             }
-            
+
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
@@ -176,24 +286,13 @@ namespace draw_WindowForms
         {
             if (startPaint)
             {
-                //Pen p = new Pen(Color.Black, 2);
-                //Size size = new Size(1, 1);
-                //Point pointerLocation = new Point(e.X, e.Y);
+                Pen p = new Pen(Color.Black, 2);
+                Size size = new Size(1, 1);
+                Point pointerLocation = new Point(e.X, e.Y);
 
-                //Rectangle rectangle = new Rectangle(pointerLocation, size);
-                //operations.Push(rectangle);
-                //g.DrawRectangle(p, rectangle);
+                Rectangle rectangle = new Rectangle(pointerLocation, size);
 
-                //while (operations.Count > 0)
-                //{
-                //    Rectangle r = operations.Pop();
-                //    g.DrawRectangle(p, r);
-                //}
-                //if (lastPoint.X != 0 || lastPoint.Y != 0)
-                //{
-                //    g.DrawLine(p, lastPoint, pointerLocation);
-                //}
-                //lastPoint = pointerLocation;
+                g.DrawRectangle(p, rectangle);
             }
         }
 
@@ -205,14 +304,26 @@ namespace draw_WindowForms
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Filter = "Bitmaps |*.bmp";
+            saveFileDialog.Filter = "bmp|*.bmp|jpg|*.jpg|png|*.png";
             DialogResult dialogResult = saveFileDialog.ShowDialog();
 
             if (dialogResult == DialogResult.OK)
             {
                 Rectangle rect = new Rectangle(pictureBox1.Location, pictureBox1.Size);
                 pictureBox1.DrawToBitmap(bmp, rect);
-                bmp.Save(saveFileDialog.FileName);
+
+                if (saveFileDialog.FilterIndex == 0)
+                {
+                    bmp.Save(saveFileDialog.FileName);
+                }
+                else if (saveFileDialog.FilterIndex==1)
+                {
+                    bmp.Save(saveFileDialog.FileName, ImageFormat.Jpeg);
+                }
+                else if (saveFileDialog.FilterIndex == 2)
+                {
+                    bmp.Save(saveFileDialog.FileName, ImageFormat.Png);
+                }
             }
         }
 
@@ -226,21 +337,103 @@ namespace draw_WindowForms
             string file = null;
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Multiselect = false;
-            openFileDialog.Filter = "Bitmaps |*.bmp"; 
+            openFileDialog.Filter = "Images|*.bmp;*.jpg;*.png";
             DialogResult dialogResult = openFileDialog.ShowDialog();
 
             if (dialogResult == DialogResult.OK)
             {
                 file = openFileDialog.FileName;
+                bmp = (Bitmap)Image.FromFile(file);
+                pictureBox1.Image = bmp;
             }
             else
             {
-                MessageBox.Show("No file selecetd!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 file = null;
             }
+        }
 
-            bmp = (Bitmap)Image.FromFile(file);
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void asyncDemoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Form2 form2 = new Form2();
+            form2.ShowDialog();
+        }
+
+        private void polskiToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ChangeCulture(new CultureInfo("pl"));
+        }
+
+        private void ChangeCulture(CultureInfo culture)
+        {
+            Thread.CurrentThread.CurrentUICulture = culture;
+            ComponentResourceManager resources = new ComponentResourceManager(typeof(Form1));
+            resources.ApplyResources(this, "$this", culture);
+            UpdateControlsCulture(this, resources, culture);
+            polskiToolStripMenuItem.Checked = (culture.Name == "pl");
+            englishToolStripMenuItem.Checked = (culture.Name == "en");
+            DateTime dt = DateTime.Now;
+            toolStripStatusLabel2.Text = dt.ToString("d", culture) + "    " + dt.ToString("t", culture);
+
+            
+            foreach (ToolStripItem tsi in menuStrip1.Items)
+            {
+                UpdateToolStripItemsCulture(tsi, resources, culture);
+            }
+        }
+
+        private void UpdateControlsCulture(Control control,
+ComponentResourceManager resourceProvider, CultureInfo culture)
+        {
+            resourceProvider.ApplyResources(control, control.Name, culture);
+            foreach (Control ctrl in control.Controls)
+            {
+                UpdateControlsCulture(ctrl, resourceProvider, culture);
+            }
+        }
+
+        private void UpdateToolStripItemsCulture(ToolStripItem item, ComponentResourceManager resourceProvider, CultureInfo culture)
+        {
+            resourceProvider.ApplyResources(item, item.Name, culture);
+            if (item is ToolStripMenuItem)
+            {
+                foreach (ToolStripItem it in ((ToolStripMenuItem)item).DropDownItems)
+                {
+                    UpdateToolStripItemsCulture(it, resourceProvider, culture);
+                }
+            }
+        }
+
+        private void englishToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ChangeCulture(new CultureInfo("en"));
+        }
+
+        private void toolStripButton2_Click(object sender, EventArgs e)
+        {
+            drawMode = 1;
+        }
+
+        private void toolStripButton3_Click(object sender, EventArgs e)
+        {
+            drawMode = 2;
+        }
+
+        private void toolStripButton4_Click(object sender, EventArgs e)
+        {
+            drawMode = 3;
+        }
+
+        private void newToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+            g = Graphics.FromImage(bmp);
             pictureBox1.Image = bmp;
         }
     }
 }
+
